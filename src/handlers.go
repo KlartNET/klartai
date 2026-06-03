@@ -13,11 +13,6 @@ import (
 	"klartai/src/models"
 )
 
-type ChatRequest struct {
-	Model		string		`json:"model"`
-	Messages	[]types.Message	`json:"messages"`
-}
-
 type LLamaRequest struct {
 	Messages	[]types.Message	`json:"messages"`
 	Temperature	float64			`json:"temperature"`
@@ -25,20 +20,21 @@ type LLamaRequest struct {
 	TopP		float64			`json:"top_p"`
 	MinP		float64			`json:"min_p"`
 }
-type LLamaResponse struct {
-	Code		string		`json:"code"`
-	DisplayName string		`json:"displayName"`
-	Source		string		`json:"source"`
-	ContextSize string		`json:"contextSize"`
-	Parameters  string		`json:"parameters"`
-	Tags		[]string	`json:"tags,omitempty"`
-}
 
 func handleGetModels(ctx echo.Context) error {
-	modelList := make([]LLamaResponse, 0, len(models.Registry))
+	type Response struct {
+		Code		string		`json:"code"`
+		DisplayName string		`json:"displayName"`
+		Source		string		`json:"source"`
+		ContextSize string		`json:"contextSize"`
+		Parameters  string		`json:"parameters"`
+		Tags		[]string	`json:"tags,omitempty"`
+	}
+
+	modelList := make([]Response, 0, len(models.Registry))
 
 	for code, m := range models.Registry {
-		modelList = append(modelList, LLamaResponse{
+		modelList = append(modelList, Response{
 			Code:		 code,
 			DisplayName: m.Metadata.DisplayName,
 			ContextSize: m.RunOption.ContextSize,
@@ -52,7 +48,12 @@ func handleGetModels(ctx echo.Context) error {
 }
 
 func handleChat(ctx echo.Context) error {
-	request := new(ChatRequest)
+	type Request struct {
+		Model		string		`json:"model"`
+		Messages	[]types.Message	`json:"messages"`
+	}
+
+	request := new(Request)
 	if err := ctx.Bind(request); err != nil {
 		return ctx.String(
 			http.StatusBadRequest,
